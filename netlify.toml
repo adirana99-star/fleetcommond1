@@ -1,0 +1,13 @@
+[build]
+  command = "npm install && npx expo export --platform web --output-dir dist"
+  publish = "dist"
+
+[build.environment]
+  EXPO_PUBLIC_ENVIRONMENT = "production"
+  EXPO_PUBLIC_API_BASE_URL = "https://api.fleetmind.org"
+
+# Single-page app fallback so client-side routes resolve to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

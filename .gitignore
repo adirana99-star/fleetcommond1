@@ -13,3 +13,15 @@ web-build/
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+
+# Bundled JDK / build tooling (do not commit — too large for GitHub)
+tools/
+# Build artifacts (APK/AAB/APKS) — distribute via releases, not git
+*.apk
+*.aab
+*.apks
+out-signed/
+android/
+
+# Large packaged artifacts
+*.zip

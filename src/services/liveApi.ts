@@ -7,7 +7,7 @@ interface SyncResult {
   message: string;
 }
 
-export async function syncFleetChanges(queue: SyncQueueItem[]): Promise<SyncResult> {
+export async function syncFleetChanges(queue: SyncQueueItem[], authToken?: string): Promise<SyncResult> {
   if (queue.length === 0) {
     return {
       ok: true,
@@ -27,7 +27,8 @@ export async function syncFleetChanges(queue: SyncQueueItem[]): Promise<SyncResu
   const response = await fetch(`${environment.apiBaseUrl}/fleet/sync`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
     },
     body: JSON.stringify({
       deviceTime: new Date().toISOString(),

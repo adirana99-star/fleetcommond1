@@ -104,6 +104,137 @@ Expected request shape:
 
 For production receipt/challan uploads, connect attachments to backend file storage such as S3, Firebase Storage, Supabase Storage, or your own API.
 
+## MongoDB Backend (New)
+
+This workspace now includes a backend service in [backend/package.json](backend/package.json) using:
+
+- Express API
+- Mongoose + MongoDB (Atlas or local)
+- Sync endpoint compatible with app queue: `POST /fleet/sync`
+
+### 1) Configure backend env
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+
+```bash
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<db>?retryWrites=true&w=majority
+PORT=4000
+CORS_ORIGIN=http://localhost:8084
+```
+
+### 2) Install and run backend
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Or from root:
+
+```bash
+npm run backend:dev
+```
+
+### 2.1) Configure auth env
+
+Add these values in `backend/.env`:
+
+```bash
+JWT_SECRET=replace-with-strong-random-secret
+JWT_EXPIRES_IN=7d
+PLATFORM_PASSWORD_HASH=<sha256-platform-password>
+REQUIRE_AUTH_FOR_SYNC=false
+```
+
+Generate password hash (PowerShell example):
+
+```powershell
+[BitConverter]::ToString((New-Object Security.Cryptography.SHA256Managed).ComputeHash([Text.Encoding]::UTF8.GetBytes("your-password"))).Replace("-","").ToLower()
+```
+
+### 3) Point app to local backend
+
+Create or update root `.env`:
+
+```bash
+EXPO_PUBLIC_ENVIRONMENT=development
+EXPO_PUBLIC_API_BASE_URL=http://localhost:4000
+```
+
+Then restart Expo:
+
+```bash
+npm start
+```
+
+When `EXPO_PUBLIC_API_BASE_URL` is set, platform/admin/driver login in app uses backend auth (`POST /auth/login`) and sync requests include bearer token automatically.
+
+### 4) Health check
+
+```text
+GET http://localhost:4000/health
+```
+
+### 5) New API endpoints
+
+Auth:
+
+```text
+POST /auth/login
+```
+
+Body for platform:
+
+```json
+{
+  "role": "platform",
+  "password": "your-platform-password"
+}
+```
+
+Body for vendor admin:
+
+```json
+{
+  "role": "admin",
+  "phone": "+1...",
+  "password": "vendor-admin-password"
+}
+```
+
+Body for driver:
+
+```json
+{
+  "role": "driver",
+  "phone": "+1..."
+}
+```
+
+Reporting (Bearer token required):
+
+```text
+GET /fleet/vendors
+GET /fleet/vendors/:vendorId/data
+GET /fleet/vendors/:vendorId/summary
+GET /fleet/vendors/:vendorId/expenses?driverId=&vehicleId=&type=claims|maintenance|salary
+GET /fleet/drivers/:driverId/data
+GET /fleet/drivers/:driverId/summary
+```
+
+### Notes
+
+- Mobile emulator/device cannot use `localhost` of your PC directly.
+- For physical device testing, use your machine LAN IP (for example `http://192.168.1.10:4000`) and set `CORS_ORIGIN` accordingly.
+- `POST /fleet/sync` supports entities already used by app queue: `vendor`, `driver`, `vehicle`, `trip_log`, `expense_claim`, `maintenance_request`, `salary_payment`.
+- `POST /fleet/sync` can be protected by setting `REQUIRE_AUTH_FOR_SYNC=true`.
+
 ## Production Checklist
 
 - Replace `com.yourcompany.fleetcommand` in `app.config.js` with your company bundle/package identifier.

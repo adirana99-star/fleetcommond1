@@ -4,6 +4,8 @@ export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export type PaymentMethod = 'company_card' | 'cash' | 'driver_paid' | 'fuel_card' | 'other';
 
+export type SalaryPaymentMode = 'cash' | 'paytm' | 'bank_transfer' | 'upi' | 'other';
+
 export type VendorStatus = 'trial' | 'active' | 'paused';
 
 export interface Vendor {
@@ -21,6 +23,8 @@ export interface Vendor {
   requireReceiptProof: boolean;
   expenseCategories: string[];
   maintenanceTypes: string[];
+  // hashed admin password (SHA-256 hex) — optional for legacy/demo vendors
+  adminPasswordHash?: string;
   createdAt: string;
 }
 
@@ -35,6 +39,9 @@ export interface Driver {
   emergencyContact: string;
   assignedVehicleId: string;
   active: boolean;
+  photo?: Attachment;
+  agreement?: Attachment;
+  licenseDocument?: Attachment;
 }
 
 export interface Vehicle {
@@ -52,6 +59,7 @@ export interface Vehicle {
   loanBalance: number;
   monthlyPayment: number;
   active: boolean;
+  photo?: Attachment;
 }
 
 export interface Attachment {
@@ -118,19 +126,33 @@ export interface MaintenanceRequest {
   syncStatus: SyncStatus;
 }
 
+export interface SalaryPayment {
+  id: string;
+  vendorId: string;
+  driverId: string;
+  vehicleId?: string;
+  amount: number;
+  paymentDate: string;
+  paymentMode: SalaryPaymentMode;
+  note?: string;
+  createdAt: string;
+  syncStatus: SyncStatus;
+}
+
 export type SyncEntity =
   | 'vendor'
   | 'driver'
   | 'vehicle'
   | 'trip_log'
   | 'expense_claim'
-  | 'maintenance_request';
+  | 'maintenance_request'
+  | 'salary_payment';
 
 export interface SyncQueueItem {
   id: string;
   entity: SyncEntity;
-  operation: 'create' | 'update';
-  payload: Vendor | Driver | Vehicle | TripLog | ExpenseClaim | MaintenanceRequest;
+  operation: 'create' | 'update' | 'delete';
+  payload: Vendor | Driver | Vehicle | TripLog | ExpenseClaim | MaintenanceRequest | SalaryPayment;
   createdAt: string;
 }
 
@@ -141,6 +163,9 @@ export interface FleetState {
   tripLogs: TripLog[];
   expenseClaims: ExpenseClaim[];
   maintenanceRequests: MaintenanceRequest[];
+  salaryPayments: SalaryPayment[];
   syncQueue: SyncQueueItem[];
   lastSyncedAt?: string;
+  // hashed platform(super-admin) password (SHA-256 hex) — optional
+  platformPasswordHash?: string;
 }

@@ -12,7 +12,7 @@ export const initialFleetState: FleetState = {
       phone: '+1 (555) 210-4100',
       email: 'admin@northstarfreight.com',
       logoText: 'NS',
-      primaryColor: '#0f766e',
+      primaryColor: '#2563eb',
       accentColor: '#2563eb',
       subscriptionPlan: 'Enterprise',
       status: 'active',
@@ -220,6 +220,20 @@ export const initialFleetState: FleetState = {
       attachments: [],
       status: 'pending',
       submittedAt: new Date(now - 1000 * 60 * 45).toISOString(),
+      syncStatus: 'synced'
+    }
+  ],
+  salaryPayments: [
+    {
+      id: 'salary-1001',
+      vendorId: 'vendor-northstar',
+      driverId: 'driver-101',
+      vehicleId: 'vehicle-12',
+      amount: 900,
+      paymentDate: '2026-06-15',
+      paymentMode: 'cash',
+      note: 'Weekly settlement',
+      createdAt: new Date(now - hour * 12).toISOString(),
       syncStatus: 'synced'
     }
   ],

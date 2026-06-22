@@ -1,0 +1,13 @@
+android/
+ios/
+node_modules/
+tools/jdk17.0.19_10/
+out/
+out-signed/
+*.apk
+*.aab
+*.apks
+*.zip
+*.log
+build.log
+.git/

@@ -22,6 +22,7 @@ export async function loadFleetState(): Promise<FleetState> {
       tripLogs: parsed.tripLogs || [],
       expenseClaims: parsed.expenseClaims || [],
       maintenanceRequests: parsed.maintenanceRequests || [],
+      salaryPayments: parsed.salaryPayments || [],
       syncQueue: parsed.syncQueue || []
     };
   } catch {

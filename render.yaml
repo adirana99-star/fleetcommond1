@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: fleetcommand-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: CORS_ORIGIN
+        value: "https://app.fleetmind.org,https://fleetmind.org"
+      - key: PLATFORM_PASSWORD_HASH
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: TRUST_PROXY
+        value: "true"
+      - key: REQUIRE_AUTH_FOR_SYNC
+        value: "true"
