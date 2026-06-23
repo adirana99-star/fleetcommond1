@@ -19,6 +19,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify required secrets
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          missing=0
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::Missing repository secret NETLIFY_AUTH_TOKEN. Create one at https://app.netlify.com/user/applications#personal-access-tokens and add it under Settings > Secrets and variables > Actions."
+            missing=1
+          fi
+          if [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::error::Missing repository secret NETLIFY_SITE_ID. Set it to c3cc379b-778e-44d3-a430-452c30066ba3 under Settings > Secrets and variables > Actions."
+            missing=1
+          fi
+          if [ "$missing" -eq 1 ]; then
+            echo "Add the missing secret(s) then re-run this workflow."
+            exit 1
+          fi
+          echo "Both required secrets are present."
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
