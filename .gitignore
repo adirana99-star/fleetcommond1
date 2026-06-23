@@ -2,6 +2,8 @@ node_modules/
 .expo/
 dist/
 web-build/
+.netlify/
+dist-check/
 *.jks
 *.p8
 *.p12
