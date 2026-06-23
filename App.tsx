@@ -1815,7 +1815,7 @@ export default function App() {
     <SafeAreaView style={styles.screen}>
       <StatusBar style="light" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
-        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           <Header
             fleet={fleet}
             role={role}
@@ -3990,7 +3990,11 @@ const styles = StyleSheet.create({
   keyboard: {
     flex: 1
   },
+  scroll: {
+    flex: 1
+  },
   scrollContent: {
+    flexGrow: 1,
     paddingBottom: 28
   },
   loadingScreen: {
