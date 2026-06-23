@@ -2,7 +2,9 @@ import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   SafeAreaView,
@@ -2368,6 +2370,8 @@ function AdminWorkspace({
   const [expenseViewVehicleId, setExpenseViewVehicleId] = useState('');
   const [driverDetailType, setDriverDetailType] = useState<ExpenseLookupDetail | null>(null);
   const [vehicleDetailType, setVehicleDetailType] = useState<ExpenseLookupDetail | null>(null);
+  const [openDriverId, setOpenDriverId] = useState('');
+  const [openVehicleId, setOpenVehicleId] = useState('');
 
   const filteredSalaryPayments = useMemo(
     () =>
@@ -2856,6 +2860,41 @@ function AdminWorkspace({
           <Text style={styles.fieldLabel}>Vehicle photo (before hand over)</Text>
           <AttachmentBox attachments={vehicleForm.photo ? [vehicleForm.photo] : []} onAttach={onAttachVehiclePhoto} label="Upload vehicle photo" />
           <ActionButton label="Add vehicle to this vendor" tone="green" icon={<Plus color="#ffffff" size={18} />} onPress={onAddVehicle} />
+
+          <View style={styles.detailDivider} />
+          <SectionTitle icon={<Truck color="#2563eb" size={20} />} title={`Vehicles on file (${vehicles.length})`} />
+          <Text style={styles.loginHelp}>Tap a vehicle to view its details and photo.</Text>
+          {vehicles.length === 0 ? <EmptyState text="No vehicles added yet." /> : null}
+          {vehicles.map((vehicle) => {
+            const assignedDriver = drivers.find((driver) => driver.assignedVehicleId === vehicle.id);
+            const open = openVehicleId === vehicle.id;
+            return (
+              <View key={vehicle.id} style={styles.rosterRow}>
+                <Pressable style={styles.rosterTop} onPress={() => setOpenVehicleId(open ? '' : vehicle.id)}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rosterName}>{vehicle.unitNumber} · {vehicle.make} {vehicle.model}</Text>
+                    <Text style={styles.mutedText}>{vehicle.plate || 'No plate'} · {assignedDriver?.name || 'Unassigned'}</Text>
+                  </View>
+                  <Text style={styles.textButtonLabel}>{open ? 'Hide' : 'View'}</Text>
+                </Pressable>
+                {open ? (
+                  <View style={styles.detailList}>
+                    <DetailLine label="Year" value={vehicle.year} />
+                    <DetailLine label="VIN" value={vehicle.vin} />
+                    <DetailLine label="Plate" value={vehicle.plate} />
+                    <DetailLine label="Mileage" value={vehicle.mileage ? String(vehicle.mileage) : ''} />
+                    <DetailLine label="Bought date" value={vehicle.boughtDate} />
+                    <DetailLine label="Total cost" value={vehicle.totalCost ? money(vehicle.totalCost) : ''} />
+                    <DetailLine label="Loan balance" value={vehicle.loanBalance ? money(vehicle.loanBalance) : ''} />
+                    <DetailLine label="Monthly payment" value={vehicle.monthlyPayment ? money(vehicle.monthlyPayment) : ''} />
+                    <DetailLine label="Assigned driver" value={assignedDriver?.name || 'Unassigned'} />
+                    <DetailLine label="Status" value={vehicle.active ? 'Active' : 'Inactive'} />
+                    <AttachmentViewer label="Vehicle photo" attachment={vehicle.photo} />
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       ) : null}
 
@@ -3078,6 +3117,39 @@ function AdminWorkspace({
           <Text style={styles.fieldLabel}>Agreement</Text>
           <AttachmentBox attachments={driverForm.agreement ? [driverForm.agreement] : []} onAttach={onAttachDriverAgreement} label="Upload agreement" />
           <ActionButton label="Add driver to this vendor" tone="blue" icon={<UserPlus color="#ffffff" size={18} />} onPress={onAddDriver} />
+
+          <View style={styles.detailDivider} />
+          <SectionTitle icon={<Users color="#2563eb" size={20} />} title={`Drivers on file (${drivers.length})`} />
+          <Text style={styles.loginHelp}>Tap a driver to view their details, photo, license and agreement.</Text>
+          {drivers.length === 0 ? <EmptyState text="No drivers added yet." /> : null}
+          {drivers.map((driver) => {
+            const assignedVehicle = getAssignedVehicle(fleet, driver);
+            const open = openDriverId === driver.id;
+            return (
+              <View key={driver.id} style={styles.rosterRow}>
+                <Pressable style={styles.rosterTop} onPress={() => setOpenDriverId(open ? '' : driver.id)}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rosterName}>{driver.name}</Text>
+                    <Text style={styles.mutedText}>{driver.phone} · {assignedVehicle?.unitNumber || 'No vehicle'}</Text>
+                  </View>
+                  <Text style={styles.textButtonLabel}>{open ? 'Hide' : 'View'}</Text>
+                </Pressable>
+                {open ? (
+                  <View style={styles.detailList}>
+                    <DetailLine label="Email" value={driver.email} />
+                    <DetailLine label="License number" value={driver.licenseNumber} />
+                    <DetailLine label="Address" value={driver.address} />
+                    <DetailLine label="Emergency contact" value={driver.emergencyContact} />
+                    <DetailLine label="Assigned vehicle" value={assignedVehicle ? `${assignedVehicle.unitNumber} · ${assignedVehicle.make} ${assignedVehicle.model}` : 'None'} />
+                    <DetailLine label="Status" value={driver.active ? 'Active' : 'Inactive'} />
+                    <AttachmentViewer label="Driver photo" attachment={driver.photo} />
+                    <AttachmentViewer label="Driving license" attachment={driver.licenseDocument} />
+                    <AttachmentViewer label="Agreement" attachment={driver.agreement} />
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       ) : null}
 
@@ -3174,7 +3246,7 @@ function DriverWorkspace({
   language: Language;
 }) {
   const t = driverTranslations[language];
-  const drivers = vendorDrivers(fleet, vendor.id);
+  const drivers = vendorDrivers(fleet, vendor.id).filter((driver) => driver.id === selectedDriverId);
   const driverTrips = fleet.tripLogs.filter((trip) => trip.driverId === selectedDriverId);
   const driverClaims = fleet.expenseClaims.filter((claim) => claim.driverId === selectedDriverId);
   const approved = driverClaims.filter((claim) => claim.status === 'approved').reduce((sum, claim) => sum + claim.amount, 0);
@@ -3866,6 +3938,46 @@ function EmptyState({ text }: { text: string }) {
   return (
     <View style={styles.emptyState}>
       <Text style={styles.emptyStateText}>{text}</Text>
+    </View>
+  );
+}
+
+function DetailLine({ label, value }: { label: string; value?: string }) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLineLabel}>{label}</Text>
+      <Text style={styles.detailLineValue}>{value && value.trim() ? value : '—'}</Text>
+    </View>
+  );
+}
+
+function AttachmentViewer({ label, attachment }: { label: string; attachment?: Attachment }) {
+  const isImage = !!attachment && (attachment.mimeType?.startsWith('image/') || /\.(png|jpe?g|gif|webp|heic)$/i.test(attachment.name));
+  const open = () => {
+    if (attachment?.uri) {
+      Linking.openURL(attachment.uri).catch(() => Alert.alert('Unable to open', 'This file could not be opened on your device.'));
+    }
+  };
+  return (
+    <View style={styles.attachmentViewer}>
+      <Text style={styles.detailLineLabel}>{label}</Text>
+      {!attachment ? (
+        <Text style={styles.mutedText}>Not uploaded.</Text>
+      ) : (
+        <Pressable style={styles.attachmentViewerRow} onPress={open}>
+          {isImage ? (
+            <Image source={{ uri: attachment.uri }} style={styles.attachmentThumb} resizeMode="cover" />
+          ) : (
+            <View style={styles.attachmentThumbFile}>
+              <FileText color="#2563eb" size={20} />
+            </View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.attachmentName} numberOfLines={1}>{attachment.name}</Text>
+            <Text style={styles.attachmentOpenLink}>Tap to open</Text>
+          </View>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -4709,6 +4821,64 @@ const styles = StyleSheet.create({
     borderColor: '#e0e7ff',
     backgroundColor: '#f7f8fe',
     padding: 10
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+    marginVertical: 14
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#edf0fb'
+  },
+  detailLineLabel: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '700'
+  },
+  detailLineValue: {
+    color: '#0f172a',
+    fontSize: 13,
+    fontWeight: '700',
+    flexShrink: 1,
+    textAlign: 'right'
+  },
+  attachmentViewer: {
+    marginTop: 10,
+    gap: 6
+  },
+  attachmentViewerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
+    backgroundColor: '#ffffff',
+    padding: 8
+  },
+  attachmentThumb: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    backgroundColor: '#e2e8f0'
+  },
+  attachmentThumbFile: {
+    width: 52,
+    height: 52,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#eff6ff'
+  },
+  attachmentOpenLink: {
+    color: '#2563eb',
+    fontSize: 12,
+    fontWeight: '800'
   },
   approvalActions: {
     flexDirection: 'row',

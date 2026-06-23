@@ -17,7 +17,8 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.yourcompany.fleetcommand',
+      bundleIdentifier: 'org.fleetmind.app',
+      buildNumber: '1',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false
       }
