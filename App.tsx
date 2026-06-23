@@ -706,6 +706,26 @@ function claimRisk(claim: ExpenseClaim, vendor: Vendor): string {
   return 'Ready for review';
 }
 
+async function toPersistentUri(uri: string): Promise<string> {
+  // On web, DocumentPicker returns a temporary blob: URL that becomes invalid
+  // once the data is persisted/reloaded. Convert it to a durable base64 data URL.
+  if (Platform.OS === 'web' && uri && !uri.startsWith('data:')) {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(typeof reader.result === 'string' ? reader.result : uri);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return uri;
+    }
+  }
+  return uri;
+}
+
 async function pickAttachments(): Promise<Attachment[]> {
   const result = await DocumentPicker.getDocumentAsync({
     copyToCacheDirectory: true,
@@ -717,13 +737,15 @@ async function pickAttachments(): Promise<Attachment[]> {
     return [];
   }
 
-  return result.assets.map((asset) => ({
-    id: newId('attach'),
-    name: asset.name,
-    uri: asset.uri,
-    mimeType: asset.mimeType,
-    size: asset.size
-  }));
+  return Promise.all(
+    result.assets.map(async (asset) => ({
+      id: newId('attach'),
+      name: asset.name,
+      uri: await toPersistentUri(asset.uri),
+      mimeType: asset.mimeType,
+      size: asset.size
+    }))
+  );
 }
 
 async function pickSingleAttachment(): Promise<Attachment | null> {
@@ -741,7 +763,7 @@ async function pickSingleAttachment(): Promise<Attachment | null> {
   return {
     id: newId('attach'),
     name: asset.name,
-    uri: asset.uri,
+    uri: await toPersistentUri(asset.uri),
     mimeType: asset.mimeType,
     size: asset.size
   };
